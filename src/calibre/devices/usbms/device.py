@@ -9,6 +9,7 @@ intended to be subclassed with the relevant parts implemented for a particular
 device. This class handles device detection.
 '''
 
+import dbus
 import glob
 import os
 import re
@@ -668,11 +669,35 @@ class Device(DeviceConfig, DevicePlugin):
 
         if not d.serial:
             raise DeviceError("Device has no S/N.  Can't continue")
-        from .hal import get_hal
-        hal = get_hal()
-        vols = hal.get_volumes(d)
+
+        bus = dbus.SystemBus()
+        udm = bus.get_object("org.freedesktop.UDisks2", "/org/freedesktop/UDisks2")
+        om = dbus.Interface(udm, 'org.freedesktop.DBus.ObjectManager')
+
+        drives = []
+        blocks = []
+        vols = []
+
+        for k,v in om.GetManagedObjects().items():
+            if '/org/freedesktop/UDisks2/block_devices' in k:
+                blocks.append({'k': k, 'v': v.get('org.freedesktop.UDisks2.Block', {})})
+
+            if '/org/freedesktop/UDisks2/drives' in k:
+                drive = v.get('org.freedesktop.UDisks2.Drive', {})
+                if drive.get('ConnectionBus') == 'usb' and drive.get('Removable') and drive.get('Serial') == d.serial:
+                    drives.append(k)
+
+        for block in blocks:
+            if (block['v']['Drive'] in drives):
+                vols.append({
+                    'Block': block['k'],
+                    'Device': decodePath(block['v']['Device'])
+                })
+
         if verbose:
             print('FBSD:\t', vols)
+
+        raise DeviceError(_('Unable to mount the device'))
 
         ok, mv = hal.mount_volumes(vols)
         if not ok:

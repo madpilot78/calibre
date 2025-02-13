@@ -5,9 +5,12 @@ __license__   = 'GPL v3'
 __copyright__ = '2010, Kovid Goyal <kovid@kovidgoyal.net>'
 __docformat__ = 'restructuredtext en'
 
+import json
 import os
 import re
+import subprocess
 from contextlib import suppress
+from calibre.constants import isfreebsd
 
 
 def node_mountpoint(node):
@@ -19,11 +22,19 @@ def node_mountpoint(node):
         return raw.replace(b'\\040', b' ').replace(b'\\011', b'\t').replace(b'\\012',
                 b'\n').replace(b'\\0134', b'\\').decode('utf-8')
 
-    with open('/proc/mounts', 'rb') as src:
-        for line in src.readlines():
-            line = line.split()
-            if line[0] == node:
-                return de_mangle(line[1])
+    if isfreebsd:
+        device = node.replace('/org/freedesktop/UDisks2/drives', '/dev')
+        cmd = subprocess.run(['mount', '-p', '--libxo', 'json'], capture_output=True, encoding='UTF-8')
+        stdout = json.loads(cmd.stdout)
+        for row in stdout['mount']['fstab']:
+            if (row['device'] == device):
+                return de_mangle(row['mntpoint'])
+    else:
+        with open('/proc/mounts', 'rb') as src:
+            for line in src.readlines():
+                line = line.split()
+                if line[0] == node:
+                    return de_mangle(line[1])
     return None
 
 
