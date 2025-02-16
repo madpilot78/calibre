@@ -698,8 +698,6 @@ class Device(DeviceConfig, DevicePlugin):
         if verbose:
             print('FBSD:\t', vols)
 
-        raise DeviceError(_('Unable to mount the device'))
-
         ok, mv = freebsd_mount_volumes(vols)
         if not ok:
             raise DeviceError(_('Unable to mount the device'))
