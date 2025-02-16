@@ -706,7 +706,7 @@ class Device(DeviceConfig, DevicePlugin):
         for k, v in mv.items():
             setattr(self, k, v)
 
-    def freebsd_mount_volumes(vols)
+    def freebsd_mount_volumes(vols):
         def mount(node):
             mp = self.node_mountpoint(node)
             if mp is not None:
