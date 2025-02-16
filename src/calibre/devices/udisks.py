@@ -112,7 +112,8 @@ class UDisks:
     def mount(self, device_node_path):
         msg = self.filesystem_operation_message(device_node_path, 'Mount', options=('s', ','.join(basic_mount_options())))
         try:
-            self.send(msg)
+            r = self.send(msg)
+            return r.body[0]
         except Exception:
             # May be already mounted, check
             mp = node_mountpoint(str(device_node_path))
