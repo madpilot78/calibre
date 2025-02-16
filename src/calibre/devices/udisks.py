@@ -23,12 +23,11 @@ def node_mountpoint(node):
                 b'\n').replace(b'\\0134', b'\\').decode('utf-8')
 
     if isfreebsd:
-        device = node.replace('/org/freedesktop/UDisks2/drives', '/dev')
         cmd = subprocess.run(['mount', '-p', '--libxo', 'json'], capture_output=True, encoding='UTF-8')
         stdout = json.loads(cmd.stdout)
         for row in stdout['mount']['fstab']:
-            if (row['device'] == device):
-                return de_mangle(row['mntpoint'])
+            if (row['device'].encode('utf-8') == node):
+                return de_mangle(row['mntpoint'].encode('utf-8'))
     else:
         with open('/proc/mounts', 'rb') as src:
             for line in src.readlines():

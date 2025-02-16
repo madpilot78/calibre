@@ -660,6 +660,13 @@ class Device(DeviceConfig, DevicePlugin):
 #              4.  when finished, we have a list of mount points and associated dbus nodes
 #
     def open_freebsd(self):
+        def decodePath(encoded):
+            ret = ''
+            for c in encoded:
+                if (c != 0):
+                    ret += str(c)
+            return ret
+
         # There should be some way to access the -v arg...
         verbose = False
 
@@ -698,14 +705,14 @@ class Device(DeviceConfig, DevicePlugin):
         if verbose:
             print('FBSD:\t', vols)
 
-        ok, mv = freebsd_mount_volumes(vols)
+        ok, mv = self.freebsd_mount_volumes(vols)
         if not ok:
             raise DeviceError(_('Unable to mount the device'))
         for k, v in mv.items():
             setattr(self, k, v)
 
-    def freebsd_mount_volumes(vols):
-        def mount(node):
+    def freebsd_mount_volumes(self, vols):
+        def fmount(node):
             mp = self.node_mountpoint(node)
             if mp is not None:
                 # Already mounted
@@ -726,12 +733,16 @@ class Device(DeviceConfig, DevicePlugin):
             '_card_a_prefix': None, '_card_a_vol': None,
             '_card_b_prefix': None, '_card_b_vol': None,
         }
-        for vol in volumes:
+        for vol in vols:
             try:
-                mp = do_mount(vol['Block'])
+                mp = fmount(vol['Device'])
             except Exception as e:
-                print("Failed to mount: {vol['Name']}", e)
+                print('Failed to mount: ' + vol['Name'], e)
                 continue
+
+            if mp is None:
+                continue
+
             # Mount Point becomes Mount Path
             mp += '/'
             if DEBUG:
