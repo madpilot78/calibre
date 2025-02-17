@@ -141,6 +141,11 @@ class UDisks:
         },))
         self.send(msg)
 
+    def rescan(self, device_node_path):
+        from jeepney import new_method_call
+        devname = self.device(device_node_path)
+        a = self.address(f'block_devices/{devname}', self.BLOCK)
+        self.send(new_method_call(a, 'Rescan', 'a{sv}', (kw,)))
 
 def get_udisks():
     return UDisks()

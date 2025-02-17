@@ -718,14 +718,21 @@ class Device(DeviceConfig, DevicePlugin):
                 # Already mounted
                 return mp
 
-            try:
-                from calibre.devices.udisks import mount
-                return mount(node)
-            except:
-                print('Udisks mount call failed:')
-                import traceback
-                traceback.print_exc()
-                return None
+            from calibre.devices.udisks import mount, rescan
+            for i in range(20):
+                try:
+                    return mount(node)
+                except:
+                    if i < 19:
+                        time.sleep(3)
+                        rescan(node)
+                    else:
+                        print('Udisks mount call failed:')
+                        import traceback
+                        traceback.print_exc()
+                        return None
+
+            return mp
 
         mtd = 0
         ans = {
@@ -798,11 +805,7 @@ class Device(DeviceConfig, DevicePlugin):
                     self.open_linux()
             if isfreebsd:
                 self._main_vol = self._card_a_vol = self._card_b_vol = None
-                try:
-                    self.open_freebsd()
-                except DeviceError:
-                    time.sleep(2)
-                    self.open_freebsd()
+                self.open_freebsd()
             if iswindows:
                 self.open_windows()
             if ismacos:
