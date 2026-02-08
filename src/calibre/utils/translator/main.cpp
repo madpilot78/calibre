@@ -96,7 +96,7 @@ install(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *names = NULL, *builtins_module = NULL, *builtins_dict = NULL;
     static const char *kwlist[] = {"names", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O", kwlist, &names)) return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O", const_cast<char **>(kwlist), &names)) return NULL;
     if (names != NULL && names != Py_None && !PySequence_Check(names)) {
         PyErr_SetString(PyExc_TypeError, "names must be a sequence"); return NULL; }
 
